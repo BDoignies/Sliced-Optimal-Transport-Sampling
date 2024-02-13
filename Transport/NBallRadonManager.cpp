@@ -3,7 +3,7 @@
 
 #include <cmath>
 #include <iostream>
-#include <gsl/gsl_sf_hyperg.h>
+// #include <gsl/gsl_sf_hyperg.h>
 #include "../Tools/my_utility.h"
 #include "../Math/myMath.h"
 #include "NBallRadonManager.h"
@@ -34,6 +34,26 @@ double NBallRadonManager::computeNormalisationFactor(int d){
         res *= M_1_PI;
         return res;
     }
+}
+
+// https://en.wikipedia.org/wiki/Hypergeometric_function
+// https://github.com/ampl/gsl/blob/master/specfunc/gsl_sf_hyperg.h
+double hypergeometric( double a, double b, double c, double x ) {
+    const double TOLERANCE = 1.0e-10;
+    const int MAX_ITS = 30000;
+
+
+    double term = a * b * x / c;
+    double value = 1.0 + term;
+    int n = 1;
+
+    while ( (abs( term ) > TOLERANCE) && (n < MAX_ITS) ) {
+        a++, b++, c++, n++;
+        term *= a * b * x / c / n;
+        value += term;
+    }
+
+    return value;
 }
 
 double NBallRadonManager::radon(double x) const{
@@ -67,7 +87,8 @@ double NBallRadonManager::radonCDF(double x) const{
         return  res * normFactor - CDFoffset;
     } else {
         double res = std::sqrt(M_PI) * tgamma((1. + N) / 2.) / (2 * tgamma(1. + N / 2.));
-        res += x * gsl_sf_hyperg_2F1(0.5, (1. - N) / 2., 1.5, x*x);
+        // res += x * gsl_sf_hyperg_2F1(0.5, (1. - N) / 2., 1.5, x*x);
+        res += x * hypergeometric(0.5, (1. - N) / 2., 1.5, x*x);
         return res * normFactor - CDFoffset;
     }
 }
